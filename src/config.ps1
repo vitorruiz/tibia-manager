@@ -25,6 +25,30 @@ function Salvar-Config {
     $config | ConvertTo-Json -Depth 3 | Set-Content $script:ConfigPath -Encoding UTF8
 }
 
+function Verificar-PathsTibia {
+    $paths = @{
+        "Tibia Principal"  = Join-Path $env:LOCALAPPDATA "Tibia\packages\Tibia"
+        "Tibia Test Server" = Join-Path $env:LOCALAPPDATA "Tibia\packages\TibiaExternal"
+    }
+
+    Write-Host "`nVerificando instalação do Tibia..." -ForegroundColor DarkGray
+
+    $algumEncontrado = $false
+    foreach ($entry in $paths.GetEnumerator()) {
+        if (Test-Path $entry.Value) {
+            Write-Host "  ✅ $($entry.Key) encontrado" -ForegroundColor Green
+            $algumEncontrado = $true
+        } else {
+            Write-Host "  ⚠️  $($entry.Key) não encontrado em: $($entry.Value)" -ForegroundColor Yellow
+        }
+    }
+
+    if (-not $algumEncontrado) {
+        Write-Host "`n  ❌ Nenhuma instalação do Tibia foi encontrada nos paths padrão." -ForegroundColor Red
+        Write-Host "  O programa pode não funcionar corretamente." -ForegroundColor Red
+    }
+}
+
 function Executar-Setup {
     param ([switch]$Reconfigurar)
 
@@ -37,9 +61,11 @@ function Executar-Setup {
         Write-Host "╚══════════════════════════════════════════╝`n" -ForegroundColor Cyan
     }
 
+    Verificar-PathsTibia
+
     $defaultDestino = Join-Path $env:USERPROFILE "OneDrive\Pictures\Tibia Screenshots"
 
-    Write-Host "Pasta de destino para Screenshots:"
+    Write-Host "`nPasta de destino para Screenshots:"
     Write-Host "  Padrão: $defaultDestino" -ForegroundColor DarkGray
     $input = Read-Host "Pressione Enter para usar o padrão ou digite outro caminho"
     $destinoScreenshots = if ($input.Trim() -eq "") { $defaultDestino } else { $input.Trim() }
