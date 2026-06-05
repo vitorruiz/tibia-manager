@@ -69,28 +69,53 @@ jobs:
           git tag ${{ steps.versao.outputs.TAG }}
           git push origin ${{ steps.versao.outputs.TAG }}
 
-      - name: Injetar versão no script
-        shell: pwsh
-        run: |
-          $versao = "${{ steps.versao.outputs.VERSAO }}"
-          (Get-Content script.ps1 -Encoding UTF8) -replace '"\bdev\b"', "`"$versao`"" |
-            Set-Content script.ps1 -Encoding UTF8
-          Write-Host "Versão $versao injetada no script."
-
       - name: Instalar ps2exe
         shell: pwsh
         run: Install-Module -Name ps2exe -Scope CurrentUser -Force
 
-      - name: Compilar executável
+      - name: Gerar bundle e compilar executável
         shell: pwsh
         run: |
-          $iconPath = Join-Path $env:GITHUB_WORKSPACE "icon.ico"
+          $versao     = "${{ steps.versao.outputs.VERSAO }}"
+          $rootPath   = $env:GITHUB_WORKSPACE
+          $bundlePath = "$env:TEMP\TibiaManager-bundle.ps1"
+          $iconPath   = Join-Path $rootPath "icon.ico"
+
+          # Mesma lógica do build.ps1 — concatena módulos + entry point
+          $modules = @(
+            "src\config.ps1",
+            "src\update.ps1",
+            "src\minimap.ps1",
+            "src\screenshots.ps1",
+            "src\testserver.ps1"
+          )
+
+          $bundle  = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`n"
+          $bundle += "`$script:Versao = `"$versao`"`n`n"
+
+          foreach ($module in $modules) {
+            $content = Get-Content (Join-Path $rootPath $module) -Raw -Encoding UTF8
+            $content = $content -replace '\[Console\]::OutputEncoding.*\n', ''
+            $bundle += "# --- $module ---`n" + $content.Trim() + "`n`n"
+          }
+
+          $entryPoint = Get-Content (Join-Path $rootPath "script.ps1") -Raw -Encoding UTF8
+          $entryPoint = $entryPoint -replace '\[Console\]::OutputEncoding.*\n', ''
+          $entryPoint = $entryPoint -replace '\$script:Versao\s*=\s*"dev"\n', ''
+          $entryPoint = $entryPoint -replace '(?s)# Carrega módulos.*?}\n', ''
+          $bundle += "# --- entry point ---`n" + $entryPoint.Trim() + "`n"
+
+          Set-Content -Path $bundlePath -Value $bundle -Encoding UTF8
+          Write-Host "Bundle gerado. Versão: $versao"
+
+          Import-Module ps2exe
+
           $params = @{
-            inputFile    = "script.ps1"
+            inputFile    = $bundlePath
             outputFile   = "TibiaManager.exe"
             title        = "Tibia Manager"
             description  = "Gerenciador de minimap, screenshots e test server do Tibia"
-            version      = "${{ steps.versao.outputs.VERSAO }}"
+            version      = $versao
             noConsole    = $false
             requireAdmin = $false
           }
