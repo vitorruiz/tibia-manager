@@ -1,0 +1,119 @@
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Gerar TibiaManager.exe
+    runs-on: windows-latest
+
+    permissions:
+      contents: write  # necessário para criar tag, release e fazer upload
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # necessário para listar todas as tags existentes
+
+      - name: Calcular próxima versão
+        id: versao
+        shell: pwsh
+        run: |
+          # Busca a última tag no formato vX.Y.Z; usa v0.0.0 como base se não existir nenhuma
+          $ultimaTag = git tag --list "v*.*.*" --sort=-version:refname | Select-Object -First 1
+          if (-not $ultimaTag) { $ultimaTag = "v0.0.0" }
+
+          $partes = $ultimaTag.TrimStart("v") -split "\."
+          $major  = [int]$partes[0]
+          $minor  = [int]$partes[1]
+          $patch  = [int]$partes[2]
+
+          # Lê mensagens de todos os commits desde a última tag
+          $commits = git log "$ultimaTag..HEAD" --format="%s" 2>$null
+          if (-not $commits) { $commits = git log --format="%s" }
+
+          # Conventional Commits: detecta o tipo de bump pelo prefixo mais alto encontrado
+          $bump = "patch"
+          foreach ($msg in $commits) {
+            if ($msg -match "^(breaking|major)(\(.+\))?!?:") { $bump = "major"; break }
+            if ($msg -match "^feat(\(.+\))?!?:"             ) { $bump = "minor" }
+          }
+
+          switch ($bump) {
+            "major" { $major++; $minor = 0; $patch = 0 }
+            "minor" { $minor++;             $patch = 0 }
+            "patch" {                        $patch++   }
+          }
+
+          $novaTag = "v$major.$minor.$patch"
+          $versao  = "$major.$minor.$patch"
+
+          Write-Host "Última tag : $ultimaTag"
+          Write-Host "Bump       : $bump"
+          Write-Host "Nova tag   : $novaTag"
+
+          echo "TAG=$novaTag"   >> $env:GITHUB_OUTPUT
+          echo "VERSAO=$versao" >> $env:GITHUB_OUTPUT
+          echo "BUMP=$bump"     >> $env:GITHUB_OUTPUT
+
+      - name: Criar e publicar nova tag
+        shell: pwsh
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.versao.outputs.TAG }}
+          git push origin ${{ steps.versao.outputs.TAG }}
+
+      - name: Injetar versão no script
+        shell: pwsh
+        run: |
+          $versao = "${{ steps.versao.outputs.VERSAO }}"
+          (Get-Content script.ps1 -Encoding UTF8) -replace '"\bdev\b"', "`"$versao`"" |
+            Set-Content script.ps1 -Encoding UTF8
+          Write-Host "Versão $versao injetada no script."
+
+      - name: Instalar ps2exe
+        shell: pwsh
+        run: Install-Module -Name ps2exe -Scope CurrentUser -Force
+
+      - name: Compilar executável
+        shell: pwsh
+        run: |
+          $iconPath = Join-Path $env:GITHUB_WORKSPACE "icon.ico"
+          $params = @{
+            inputFile    = "script.ps1"
+            outputFile   = "TibiaManager.exe"
+            title        = "Tibia Manager"
+            description  = "Gerenciador de minimap, screenshots e test server do Tibia"
+            version      = "${{ steps.versao.outputs.VERSAO }}"
+            noConsole    = $false
+            requireAdmin = $false
+          }
+          if (Test-Path $iconPath) {
+            $params.iconFile = $iconPath
+            Write-Host "Ícone encontrado, incluindo no build."
+          }
+          Invoke-ps2exe @params
+
+      - name: Criar Release e anexar .exe
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versao.outputs.TAG }}
+          name: "Tibia Manager ${{ steps.versao.outputs.TAG }}"
+          body: |
+            ## 📦 Como usar
+            1. Baixe o `TibiaManager.exe` abaixo
+            2. Execute — na primeira vez será pedido o caminho de destino dos screenshots
+            3. Pronto, sem instalação necessária
+
+            ---
+            🔖 Tipo de versão: **${{ steps.versao.outputs.BUMP }}**
+
+            > ⚠️ Se o Windows bloquear a execução, clique em **"Mais informações" → "Executar assim mesmo"**
+          files: TibiaManager.exe
+          draft: false
+          prerelease: false
