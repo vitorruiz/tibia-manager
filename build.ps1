@@ -1,4 +1,4 @@
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+﻿[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ============================================================
 #  build.ps1 — Concatena os módulos e gera TibiaManager.exe
@@ -40,9 +40,9 @@ foreach ($module in $modules) {
 
 # Adiciona o entry point sem o bloco de dot-sourcing e sem a linha de encoding/versão
 $entryPoint = Get-Content (Join-Path $rootPath "script.ps1") -Raw -Encoding UTF8
-$entryPoint = $entryPoint -replace '\[Console\]::OutputEncoding.*\n', ''
-$entryPoint = $entryPoint -replace '\$script:Versao\s*=\s*"dev"\n', ''
-$entryPoint = $entryPoint -replace '(?s)# Carrega módulos.*?}\n', ''
+$entryPoint = $entryPoint -replace '\[Console\]::OutputEncoding.*\r?\n', ''
+$entryPoint = $entryPoint -replace '\$script:Versao\s*=\s*"dev"\r?\n', ''
+$entryPoint = $entryPoint -replace '(?s)# Carrega módulos.*?\}\r?\n', ''
 $bundle += "# --- entry point ---`n"
 $bundle += $entryPoint.Trim() + "`n"
 

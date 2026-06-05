@@ -2,7 +2,7 @@
 #  config.ps1 — Gerenciamento de configuração persistente
 # ============================================================
 
-$script:ConfigPath = Join-Path $env:APPDATA "TibiaManager\config.json"
+$script:ConfigPath = Join-Path $env:LOCALAPPDATA "TibiaManager\config.json"
 
 function Carregar-Config {
     if (Test-Path $script:ConfigPath) {
@@ -63,8 +63,8 @@ function Executar-Setup {
 
     Verificar-PathsTibia
 
-    $defaultDestino = Join-Path $env:USERPROFILE "OneDrive\Pictures\Tibia Screenshots"
-    $defaultBackup  = Join-Path $env:APPDATA "TibiaManager\backups"
+    $defaultDestino = Join-Path ([Environment]::GetFolderPath('MyPictures')) "Tibia Screenshots"
+    $defaultBackup  = Join-Path $env:LOCALAPPDATA "TibiaManager\backups"
 
     Write-Host "`nPasta de destino para Screenshots:"
     Write-Host "  Padrão: $defaultDestino" -ForegroundColor DarkGray
