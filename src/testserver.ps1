@@ -45,4 +45,5 @@ function Configurar-TestServer {
     }
 
     Write-Host "🎯 Processo concluído!" -ForegroundColor Cyan
+    Read-Host "`nPressione Enter para voltar ao menu"
 }

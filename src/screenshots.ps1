@@ -52,4 +52,5 @@ function Organizar-Screenshots {
 
     Remove-Item -Path $origem -Recurse -Force
     Write-Host "✅ Screenshots organizadas com sucesso!" -ForegroundColor Green
+    Read-Host "`nPressione Enter para voltar ao menu"
 }

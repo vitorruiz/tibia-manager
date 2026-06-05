@@ -148,6 +148,7 @@ function Atualizar-Minimap {
     $duracao = $fim - $inicio
     Write-Host "✅ Minimap atualizado com sucesso!" -ForegroundColor Green
     Write-Host "⏱️ Tempo total de execução: $($duracao.ToString())" -ForegroundColor Cyan
+    Read-Host "`nPressione Enter para voltar ao menu"
 }
 
 function Combinar-Marcadores {
