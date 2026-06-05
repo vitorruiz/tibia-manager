@@ -87,7 +87,8 @@ jobs:
             "src\update.ps1",
             "src\minimap.ps1",
             "src\screenshots.ps1",
-            "src\testserver.ps1"
+            "src\testserver.ps1",
+            "src\backups.ps1"
           )
 
           $bundle  = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`n"

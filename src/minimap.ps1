@@ -6,39 +6,21 @@ function Atualizar-Minimap {
     $inicio = Get-Date
     Write-Host "`n=== Atualização do Minimap ===`n"
 
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-
-    Write-Host "Selecione onde deseja aplicar o minimap:"
-    Write-Host "1 - Tibia Principal"
-    Write-Host "2 - Tibia Test Server"
-    Write-Host "0 - Cancelar"
-    $localEscolha = Read-Host "Digite o número da opção desejada"
-
-    switch ($localEscolha) {
-        "1" {
-            $baseFolder = Join-Path $env:LOCALAPPDATA "Tibia\packages\Tibia"
-            Write-Host "Atualização será feita na versão: Principal"
-        }
-        "2" {
-            $baseFolder = Join-Path $env:LOCALAPPDATA "Tibia\packages\TibiaExternal"
-            Write-Host "Atualização será feita na versão: Test Server"
-        }
-        "0" {
-            Write-Host "Operação cancelada pelo usuário." -ForegroundColor Yellow
-            return
-        }
-        default {
-            Write-Host "Opção inválida. Saindo..." -ForegroundColor Red
-            return
-        }
-    }
-
-    $destinationFolder    = Join-Path $baseFolder "minimap"
-    $tempExtractFolder    = "$env:TEMP\minimap-temp"
-    $zipPath              = "$env:TEMP\minimap.zip"
+    $timestamp         = Get-Date -Format "yyyyMMdd-HHmmss"
+    $baseFolder        = Join-Path $env:LOCALAPPDATA "Tibia\packages\Tibia"
+    $destinationFolder = Join-Path $baseFolder "minimap"
+    $tempExtractFolder = "$env:TEMP\minimap-temp"
+    $zipPath           = "$env:TEMP\minimap.zip"
     $currentMinimapMakerPath = "$tempExtractFolder\orig_minimapmarkers.bin"
 
-    Write-Host "`nSelecione a versão do minimap para baixar:"
+    # Pasta de backup centralizada no AppData
+    $pastaBackup = Join-Path $script:Config.PastaBackup "minimap"
+    if (-not (Test-Path $pastaBackup)) {
+        New-Item -Path $pastaBackup -ItemType Directory | Out-Null
+    }
+    $backupZip = Join-Path $pastaBackup "minimap-backup-$timestamp.zip"
+
+    Write-Host "Selecione a versão do minimap para baixar:"
     Write-Host "1 - Mapa completo com marcadores"
     Write-Host "2 - Mapa completo sem marcadores (mantém os marcadores atuais)"
     Write-Host "0 - Cancelar"
@@ -58,7 +40,7 @@ function Atualizar-Minimap {
             return
         }
         default {
-            Write-Host "Opção inválida. Saindo..." -ForegroundColor Red
+            Write-Host "Opção inválida." -ForegroundColor Red
             return
         }
     }
@@ -68,17 +50,13 @@ function Atualizar-Minimap {
     Write-Host "2 - Não, manter arquivo minimapmarkers.bin atual"
     $combinar = Read-Host "Digite a opção"
 
-    $backupZip = "$baseFolder\minimap-backup-$timestamp.zip"
-
     Write-Host "`nBaixando minimap de: $url"
     Write-Host "Isso pode levar alguns segundos dependendo da sua conexão..." -ForegroundColor DarkGray
     try {
         Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing -ErrorAction Stop
         Write-Host "✅ Download concluído." -ForegroundColor Green
     } catch {
-        Write-Host "Error occurred: $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "Status Code: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
-        Write-Host "Erro ao baixar o arquivo. Verifique a URL ou sua conexão." -ForegroundColor Red
+        Write-Host "Erro ao baixar o arquivo: $($_.Exception.Message)" -ForegroundColor Red
         return
     }
 
@@ -94,11 +72,11 @@ function Atualizar-Minimap {
 
     if (Test-Path $destinationFolder) {
         $minimapMarkerOriginal = Join-Path $destinationFolder "minimapmarkers.bin"
-        Write-Host "Copiando arquivo $minimapMarkerOriginal na pasta $tempExtractFolder"
+        Write-Host "Copiando marcadores atuais para temp..."
         Copy-Item -Path $minimapMarkerOriginal -Destination $currentMinimapMakerPath -Force
-        Write-Host "Criando backup zipado da pasta minimap..."
+        Write-Host "Criando backup em: $backupZip"
         Compress-Archive -Path "$destinationFolder\*" -DestinationPath $backupZip -Force
-        Write-Host "Backup criado em: $backupZip"
+        Write-Host "✅ Backup criado." -ForegroundColor Green
     } else {
         Write-Host "A pasta minimap não foi encontrada. Será criada durante a extração."
     }
@@ -108,12 +86,12 @@ function Atualizar-Minimap {
         Expand-Archive -Path $zipPath -DestinationPath $tempExtractFolder -Force
         $extractedMinimap = Join-Path $tempExtractFolder "minimap"
         if (!(Test-Path $extractedMinimap)) {
-            Write-Host "A pasta 'minimap' não foi encontrada no conteúdo extraído. Cancelando atualização." -ForegroundColor Red
+            Write-Host "A pasta 'minimap' não foi encontrada no conteúdo extraído. Cancelando." -ForegroundColor Red
             return
         }
 
         if ($combinar -eq "1") {
-            Write-Host "Combinando arquivos minimapmarkers.bin"
+            Write-Host "Combinando arquivos minimapmarkers.bin..."
             $arquivoNovo = Join-Path $extractedMinimap "minimapmarkers.bin"
 
             if ((Test-Path $currentMinimapMakerPath) -and (Test-Path $arquivoNovo)) {
@@ -122,33 +100,29 @@ function Atualizar-Minimap {
                 Copy-Item -Path $arquivoCombinado -Destination $extractedMinimap -Force
             } elseif (Test-Path $currentMinimapMakerPath) {
                 Copy-Item -Path $currentMinimapMakerPath -Destination $extractedMinimap -Force
-                Write-Host "Arquivo minimapmarkers.bin não encontrado no mapa baixado, copiando arquivo atual." -ForegroundColor Yellow
-                Write-Host "✅ Arquivo minimapmarkers.bin copiado com sucesso." -ForegroundColor Green
+                Write-Host "minimapmarkers.bin não encontrado no mapa baixado, mantendo o atual." -ForegroundColor Yellow
             } else {
-                Write-Host "Arquivos minimapmarkers.bin não encontrados para combinação." -ForegroundColor Yellow
+                Write-Host "minimapmarkers.bin não encontrado para combinação." -ForegroundColor Yellow
             }
         } else {
-            Write-Host "Mantendo arquivo minimapmarkers.bin"
+            Write-Host "Mantendo arquivo minimapmarkers.bin atual."
         }
 
         if (Test-Path $destinationFolder) {
-            Write-Host "Removendo conteúdo antigo da pasta minimap..."
+            Write-Host "Removendo minimap antigo..."
             Remove-Item -Path $destinationFolder -Recurse -Force
         }
 
-        Write-Host "Atualizando arquivos com nova versão..."
+        Write-Host "Aplicando novo minimap..."
         Copy-Item -Path $extractedMinimap -Destination $destinationFolder -Recurse -Force
     } finally {
-        # Limpeza garantida mesmo em caso de erro
         Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $tempExtractFolder -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    $fim     = Get-Date
-    $duracao = $fim - $inicio
+    $duracao = (Get-Date) - $inicio
     Write-Host "✅ Minimap atualizado com sucesso!" -ForegroundColor Green
-    Write-Host "⏱️ Tempo total de execução: $($duracao.ToString())" -ForegroundColor Cyan
-    Read-Host "`nPressione Enter para voltar ao menu"
+    Write-Host "⏱️ Tempo total: $($duracao.ToString())" -ForegroundColor Cyan
 }
 
 function Combinar-Marcadores {
@@ -171,12 +145,10 @@ function Combinar-Marcadores {
 
     $todos = @{}
 
-    Write-Host "Configurando marcadores atuais..."
+    Write-Host "Mesclando marcadores..."
     foreach ($m in $marcadoresOrig) {
         $todos[$m.Chave] = $m.Dados
     }
-
-    Write-Host "Adicionando novos marcadores..."
     foreach ($m in $marcadoresNovo) {
         if (-not $todos.ContainsKey($m.Chave)) {
             $todos[$m.Chave] = $m.Dados
@@ -283,7 +255,6 @@ function Extrair-Marcadores {
             $z     = $bloco[$j]
             $chave = "$x-$y-$z"
         } catch {
-            # Registra a falha com motivo e offset para facilitar debug futuro
             $falhas++
             Write-Verbose "Parse falhou no offset $i`: $_"
             $chave = "invalid-$i"

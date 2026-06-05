@@ -3,7 +3,7 @@
 $script:Versao = "dev"
 
 # Carrega módulos — em modo dev usa dot-sourcing; no build o conteúdo é concatenado
-$modules = @("config", "update", "minimap", "screenshots", "testserver")
+$modules = @("config", "update", "minimap", "screenshots", "testserver", "backups")
 foreach ($m in $modules) {
     . "$PSScriptRoot\src\$m.ps1"
 }
@@ -29,6 +29,7 @@ while ($true) {
     Write-Host "1 - Atualizar Minimap"
     Write-Host "2 - Organizar Screenshots"
     Write-Host "3 - Configurar Test Server Client"
+    Write-Host "4 - Gerenciar Backups do Minimap"
     Write-Host "8 - Verificar atualizações"
     Write-Host "9 - Reconfigurar"
     Write-Host "0 - Sair"
@@ -38,6 +39,7 @@ while ($true) {
         "1" { Atualizar-Minimap }
         "2" { Organizar-Screenshots }
         "3" { Configurar-TestServer }
+        "4" { Gerenciar-Backups }
         "8" { Verificar-Atualizacao }
         "9" {
             $script:Config = Executar-Setup -Reconfigurar

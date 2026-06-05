@@ -64,14 +64,21 @@ function Executar-Setup {
     Verificar-PathsTibia
 
     $defaultDestino = Join-Path $env:USERPROFILE "OneDrive\Pictures\Tibia Screenshots"
+    $defaultBackup  = Join-Path $env:APPDATA "TibiaManager\backups"
 
     Write-Host "`nPasta de destino para Screenshots:"
     Write-Host "  Padrão: $defaultDestino" -ForegroundColor DarkGray
     $input = Read-Host "Pressione Enter para usar o padrão ou digite outro caminho"
     $destinoScreenshots = if ($input.Trim() -eq "") { $defaultDestino } else { $input.Trim() }
 
+    Write-Host "`nPasta de backups:"
+    Write-Host "  Padrão: $defaultBackup" -ForegroundColor DarkGray
+    $input = Read-Host "Pressione Enter para usar o padrão ou digite outro caminho"
+    $pastaBackup = if ($input.Trim() -eq "") { $defaultBackup } else { $input.Trim() }
+
     $config = [PSCustomObject]@{
         DestinoScreenshots = $destinoScreenshots
+        PastaBackup        = $pastaBackup
     }
 
     Salvar-Config -config $config

@@ -18,7 +18,8 @@ $modules = @(
     "src\update.ps1",
     "src\minimap.ps1",
     "src\screenshots.ps1",
-    "src\testserver.ps1"
+    "src\testserver.ps1",
+    "src\backups.ps1"
 )
 
 Write-Host "Gerando bundle..." -ForegroundColor DarkGray

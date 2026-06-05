@@ -12,7 +12,10 @@ function Organizar-Screenshots {
     $timestamp   = Get-Date -Format "yyyyMMdd-HHmmss"
     $origem      = Join-Path $env:LOCALAPPDATA "Tibia\packages\Tibia\screenshots"
     $destino     = $script:Config.DestinoScreenshots
-    $pastaBackup = Join-Path $env:LOCALAPPDATA "Tibia\packages\Tibia"
+    $pastaBackup = Join-Path $script:Config.PastaBackup "screenshots"
+    if (-not (Test-Path $pastaBackup)) {
+        New-Item -Path $pastaBackup -ItemType Directory | Out-Null
+    }
     $backupCaminho = Join-Path $pastaBackup "screenshots-backup-$timestamp.zip"
 
     Write-Host "Destino configurado: $destino" -ForegroundColor DarkGray
