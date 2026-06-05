@@ -1,6 +1,6 @@
 # 🎮 Tibia Manager
 
-Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualização de minimap, organização de screenshots e sincronização com o Test Server.
+Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualização de minimap, organização de screenshots, sincronização com o Test Server e gestão de backups.
 
 ---
 
@@ -8,9 +8,8 @@ Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualizaç
 
 ### 🗺️ Atualizar Minimap
 - Download do minimap completo via [tibiamaps.io](https://tibiamaps.io)
-- Suporte ao Tibia Principal e Test Server
 - Opção de combinar seus marcadores atuais com os do mapa novo
-- Backup automático antes de qualquer substituição
+- Backup automático criado antes de qualquer substituição
 
 ### 📸 Organizar Screenshots
 - Move screenshots da pasta do Tibia para o destino configurado
@@ -21,6 +20,11 @@ Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualizaç
 - Copia pastas `characterdata`, `conf` e `minimap` do cliente principal para o Test Server
 - Útil para manter a mesma configuração nos dois clientes
 
+### 💾 Gerenciar Backups do Minimap
+- Lista todos os backups disponíveis com data e tamanho
+- Restaura qualquer backup anterior com um clique (salva o estado atual antes de restaurar)
+- Limpa backups antigos mantendo apenas o mais recente
+
 ---
 
 ## 🚀 Como usar
@@ -28,7 +32,7 @@ Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualizaç
 ### Opção 1 — Executável (recomendado)
 1. Acesse a [última release](https://github.com/vitorruiz/tibia-manager/releases/latest)
 2. Baixe o `TibiaManager.exe`
-3. Execute — na primeira vez um assistente pedirá o caminho de destino das screenshots
+3. Execute — na primeira vez um assistente de configuração será exibido
 4. Pronto, sem instalação necessária
 
 > ⚠️ Se o Windows bloquear a execução, clique em **"Mais informações" → "Executar assim mesmo"**
@@ -43,12 +47,40 @@ Utilitário para automatizar tarefas repetitivas do Tibia no Windows: atualizaç
 
 ## ⚙️ Configuração
 
-Na primeira execução o Tibia Manager cria um arquivo de configuração em:
+Na primeira execução o Tibia Manager verifica a instalação do Tibia e solicita:
+
+| Campo | Padrão |
+|---|---|
+| Pasta de destino das screenshots | `%USERPROFILE%\OneDrive\Pictures\Tibia Screenshots` |
+| Pasta de backups | `%APPDATA%\TibiaManager\backups` |
+
+As configurações são salvas em:
 ```
 %APPDATA%\TibiaManager\config.json
 ```
 
-Para alterar as configurações a qualquer momento, escolha a opção **9 - Reconfigurar** no menu principal.
+Para alterar a qualquer momento, escolha a opção **9 - Reconfigurar** no menu principal.
+
+### Estrutura de backups
+
+```
+%APPDATA%\TibiaManager\
+├── config.json
+└── backups\
+    ├── minimap\
+    │   ├── minimap-backup-20250101-120000.zip
+    │   └── minimap-backup-20250605-183000.zip
+    └── screenshots\
+        └── screenshots-backup-20250605-183000.zip
+```
+
+---
+
+## 🔄 Auto-update
+
+O Tibia Manager verifica automaticamente se há uma nova versão disponível ao iniciar. Caso haja, oferece a opção de atualizar — o download e a substituição do executável são feitos automaticamente.
+
+Para verificar manualmente, escolha a opção **8 - Verificar atualizações** no menu.
 
 ---
 
@@ -68,7 +100,7 @@ O script instala o módulo `ps2exe` automaticamente se necessário e gera o `Tib
 
 ## 🔖 Versionamento
 
-As releases são geradas automaticamente a cada commit na branch `master` seguindo [Conventional Commits](https://www.conventionalcommits.org):
+As releases são geradas automaticamente a cada commit na branch `main` seguindo [Conventional Commits](https://www.conventionalcommits.org):
 
 | Prefixo do commit | Tipo de bump | Exemplo |
 |---|---|---|
