@@ -21,8 +21,8 @@ function Atualizar-Minimap {
     $backupZip = Join-Path $pastaBackup "minimap-backup-$timestamp.zip"
 
     Write-Host "Selecione a versão do minimap para baixar:"
-    Write-Host "1 - Mapa completo com marcadores"
-    Write-Host "2 - Mapa completo sem marcadores (mantém os marcadores atuais)"
+    Write-Host "1 - Mapa completo com marcadores do tibiamaps.io"
+    Write-Host "2 - Mapa completo sem marcadores"
     Write-Host "0 - Cancelar"
     $opcao = Read-Host "Digite o número da opção desejada"
 
@@ -45,10 +45,16 @@ function Atualizar-Minimap {
         }
     }
 
-    Write-Host "`nDeseja combinar os marcadores atuais com os do mapa novo?"
-    Write-Host "1 - Sim, combinar marcadores (mantém os seus e adiciona os novos)"
-    Write-Host "2 - Não, sobrescrever com os marcadores do mapa baixado"
-    $combinar = Read-Host "Digite a opção"
+    if ($opcao -eq "2") {
+        # Sem marcadores no download: sempre preserva os marcadores atuais
+        $combinar = "1"
+        Write-Host "`nMarcadores atuais serão preservados (o arquivo baixado não contém marcadores)." -ForegroundColor DarkGray
+    } else {
+        Write-Host "`nDeseja combinar os seus marcadores com os do mapa baixado?"
+        Write-Host "1 - Sim, combinar (mantém os seus e adiciona os do tibiamaps.io)"
+        Write-Host "2 - Não, usar apenas os marcadores do tibiamaps.io"
+        $combinar = Read-Host "Digite a opção"
+    }
 
     Write-Host "`nBaixando minimap de: $url"
     Write-Host "Isso pode levar alguns segundos dependendo da sua conexão..." -ForegroundColor DarkGray
@@ -72,8 +78,12 @@ function Atualizar-Minimap {
 
     if (Test-Path $destinationFolder) {
         $minimapMarkerOriginal = Join-Path $destinationFolder "minimapmarkers.bin"
-        Write-Host "Copiando marcadores em uso para temp..."
-        Copy-Item -Path $minimapMarkerOriginal -Destination $marcadoresAtualPath -Force
+        if (Test-Path $minimapMarkerOriginal) {
+            Write-Host "Copiando marcadores em uso para temp..."
+            Copy-Item -Path $minimapMarkerOriginal -Destination $marcadoresAtualPath -Force
+        } else {
+            Write-Host "Nenhum marcador atual encontrado, será usado apenas o do mapa baixado." -ForegroundColor DarkGray
+        }
         Write-Host "Criando backup em: $backupZip"
         Compress-Archive -Path "$destinationFolder\*" -DestinationPath $backupZip -Force
         Write-Host "✅ Backup criado." -ForegroundColor Green
@@ -100,9 +110,11 @@ function Atualizar-Minimap {
                 Copy-Item -Path $arquivoCombinado -Destination $extractedMinimap -Force
             } elseif (Test-Path $marcadoresAtualPath) {
                 Copy-Item -Path $marcadoresAtualPath -Destination $extractedMinimap -Force
-                Write-Host "minimapmarkers.bin não encontrado no mapa baixado, mantendo o atual." -ForegroundColor Yellow
+                Write-Host "Mapa baixado não contém marcadores, mantendo apenas os seus." -ForegroundColor DarkGray
+            } elseif (Test-Path $marcadoresBaixadoPath) {
+                Write-Host "Nenhum marcador atual encontrado, usando apenas os do mapa baixado." -ForegroundColor DarkGray
             } else {
-                Write-Host "minimapmarkers.bin não encontrado para combinação." -ForegroundColor Yellow
+                Write-Host "Nenhum marcador encontrado (nem no mapa atual nem no baixado)." -ForegroundColor Yellow
             }
         } else {
             Write-Host "Usando marcadores do mapa baixado."
