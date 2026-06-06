@@ -18,7 +18,7 @@ function Atualizar-Minimap {
     if (-not (Test-Path $pastaBackup)) {
         New-Item -Path $pastaBackup -ItemType Directory | Out-Null
     }
-    $backupZip = Join-Path $pastaBackup "minimap-backup-$timestamp.zip"
+    $backupZip = Join-Path $pastaBackup "minimap-backup-$timestamp-pre-atualizacao.zip"
 
     Write-Host "Selecione a versão do minimap para baixar:"
     Write-Host "1 - Mapa completo com marcadores do tibiamaps.io"

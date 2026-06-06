@@ -50,14 +50,15 @@ function Listar-Backups {
         return
     }
 
-    Write-Host "`n  #   Data                  Tamanho"
-    Write-Host "  --- --------------------- --------"
+    Write-Host "`n  #   Data                  Tamanho   Tipo"
+    Write-Host "  --- --------------------- --------- --------------------"
     $i = 1
     foreach ($b in $backups) {
         $data    = $b.LastWriteTime.ToString("dd/MM/yyyy HH:mm:ss")
         $tamanho = "{0:N2} MB" -f ($b.Length / 1MB)
+        $tipo    = if ($b.BaseName -match "minimap-backup-\d{8}-\d{6}-(.+)$") { $Matches[1] } else { "sem tipo" }
         $tag     = if ($i -eq 1) { " (mais recente)" } else { "" }
-        Write-Host ("  {0,-3} {1,-21} {2,8}{3}" -f $i, $data, $tamanho, $tag) -ForegroundColor $(if ($i -eq 1) { "Green" } else { "White" })
+        Write-Host ("  {0,-3} {1,-21} {2,8}  {3,-20}{4}" -f $i, $data, $tamanho, $tipo, $tag) -ForegroundColor $(if ($i -eq 1) { "Green" } else { "White" })
         $i++
     }
 }
@@ -98,12 +99,14 @@ function Restaurar-Backup {
 
     $backupEscolhido = $backups[$indice - 1]
 
-    # Faz backup do estado atual antes de restaurar
     if (Test-Path $destinationFolder) {
-        $backupAtual = Join-Path $pastaBackup "minimap-backup-$timestamp.zip"
-        Write-Host "Criando backup do minimap atual antes de restaurar..."
-        Compress-Archive -Path "$destinationFolder\*" -DestinationPath $backupAtual -Force
-        Write-Host "✅ Backup do estado atual salvo." -ForegroundColor Green
+        $confirmaBackup = Read-Host "Deseja salvar um backup do minimap atual antes de restaurar? (s/n)"
+        if ($confirmaBackup -eq "s") {
+            $backupAtual = Join-Path $pastaBackup "minimap-backup-$timestamp-pre-restauracao.zip"
+            Write-Host "Criando backup do estado atual..."
+            Compress-Archive -Path "$destinationFolder\*" -DestinationPath $backupAtual -Force
+            Write-Host "✅ Backup salvo." -ForegroundColor Green
+        }
 
         Write-Host "Removendo minimap atual..."
         Remove-Item -Path $destinationFolder -Recurse -Force
