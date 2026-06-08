@@ -58,12 +58,38 @@ function Atualizar-Minimap {
 
     Write-Host "`nBaixando minimap de: $url"
     Write-Host "Isso pode levar alguns segundos dependendo da sua conexão..." -ForegroundColor DarkGray
-    try {
-        Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing -ErrorAction Stop
-        Write-Host "✅ Download concluído." -ForegroundColor Green
-    } catch {
-        Write-Host "Erro ao baixar o arquivo: $($_.Exception.Message)" -ForegroundColor Red
-        return
+
+    $maxTentativas = 3
+    $baixou        = $false
+
+    while (-not $baixou) {
+        for ($tentativa = 1; $tentativa -le $maxTentativas; $tentativa++) {
+            try {
+                if ($tentativa -gt 1) {
+                    Write-Host "Tentativa $tentativa de $maxTentativas..." -ForegroundColor DarkGray
+                }
+                Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing -ErrorAction Stop
+                Write-Host "✅ Download concluído." -ForegroundColor Green
+                $baixou = $true
+                break
+            } catch {
+                Write-Host "⚠️  Não foi possível baixar o mapa (tentativa $tentativa de $maxTentativas)." -ForegroundColor Yellow
+                Write-Host "    Detalhe: $($_.Exception.Message)" -ForegroundColor DarkGray
+                if ($tentativa -lt $maxTentativas) {
+                    Start-Sleep -Seconds 3
+                }
+            }
+        }
+
+        if (-not $baixou) {
+            Write-Host "`n❌ Não foi possível baixar o mapa do tibiamaps.io." -ForegroundColor Red
+            Write-Host "   Verifique sua conexão com a internet e se o site está acessível." -ForegroundColor DarkGray
+            $tentarNovamente = Read-Host "Deseja tentar novamente? (s/n)"
+            if ($tentarNovamente -ne "s") {
+                Write-Host "Operação cancelada." -ForegroundColor Yellow
+                return
+            }
+        }
     }
 
     if (!(Test-Path $zipPath)) {
