@@ -107,7 +107,7 @@ function Atualizar-Minimap {
             if ((Test-Path $marcadoresAtualPath) -and (Test-Path $marcadoresBaixadoPath)) {
                 $arquivoCombinado = Join-Path $tempExtractFolder "minimapmarkers-combinado.bin"
                 Combinar-Marcadores -atualPath $marcadoresAtualPath -baixadoPath $marcadoresBaixadoPath -destinoPath $arquivoCombinado
-                Copy-Item -Path $arquivoCombinado -Destination $extractedMinimap -Force
+                Copy-Item -Path $arquivoCombinado -Destination $marcadoresBaixadoPath -Force
             } elseif (Test-Path $marcadoresAtualPath) {
                 Copy-Item -Path $marcadoresAtualPath -Destination $extractedMinimap -Force
                 Write-Host "Mapa baixado não contém marcadores, mantendo apenas os seus." -ForegroundColor DarkGray
